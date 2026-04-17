@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.pyc
+upi_fraud.db
+models/*.pkl
+models/*.json
+.env

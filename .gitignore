@@ -1,0 +1,9 @@
+**/__pycache__/
+**/venv/
+**/node_modules/
+**/dist/
+**/.env
+backend/upi_fraud.db
+backend/models/*.pkl
+backend/models/*.json
+.DS_Store
