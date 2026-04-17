@@ -7,3 +7,7 @@ backend/upi_fraud.db
 backend/models/*.pkl
 backend/models/*.json
 .DS_Store
+DEPLOY_BACKEND.md
+FRONTEND_PROMPT.md
+HACKATHON_QA.md
+STUDY_GUIDE.md
