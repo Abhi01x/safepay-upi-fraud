@@ -108,10 +108,14 @@ class UserMLModel:
         iso_forest.fit(X_scaled)
 
         # --- Behavioral Embedding (centroid + spread) for drift detection ---
+        centroid = X_scaled.mean(axis=0)
+        distances = np.linalg.norm(X_scaled - centroid, axis=1)
         embedding = {
-            "centroid": X_scaled.mean(axis=0).tolist(),
+            "centroid": centroid.tolist(),
             "std": X_scaled.std(axis=0).tolist(),
             "n_samples": len(X),
+            "avg_distance": float(np.mean(distances)),
+            "max_distance": float(np.max(distances)),
         }
 
         # --- Persist ---
@@ -204,7 +208,11 @@ class UserMLModel:
 
         centroid = np.array(emb["centroid"])
         distance = np.linalg.norm(fv_scaled - centroid)
-        normalized = min(1.0, distance / 5.0)
+        # Normalize using the training data's own spread (avg distance * 3)
+        # so a "typical" transaction gets ~0.3 drift, not 1.0
+        avg_dist = emb.get("avg_distance", 2.0)
+        divisor = max(avg_dist * 3.0, 4.0)
+        normalized = min(1.0, distance / divisor)
         return round(normalized, 3)
 
     @staticmethod

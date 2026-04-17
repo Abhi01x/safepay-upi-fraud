@@ -350,16 +350,27 @@ def simulate(req: SimulateRequest, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    # Build adaptive values from the user's actual baseline
+    avg_typing = user.avg_typing_speed or 150
+    avg_amount = user.avg_amount or 2000
+    usual_start = user.usual_hour_start if user.usual_hour_start is not None else 9
+    usual_end = user.usual_hour_end if user.usual_hour_end is not None else 21
+    mid_hour = (usual_start + usual_end) // 2  # safe hour in user's range
+
+    # Pick a known payee if available, otherwise use a generic one
+    known = db.query(Payee).filter(Payee.user_id == user.id).first()
+    safe_payee = known.payee_upi if known else "friend@upi"
+
     if req.scenario == "fraud":
         return {
-            "typing_speed_ms": 42,
+            "typing_speed_ms": max(20, avg_typing * 0.15),   # 6–7× faster than baseline
             "otp_time_sec": 0.3,
-            "session_duration_sec": 6,
+            "session_duration_sec": 4,
             "copy_paste_detected": True,
             "field_hesitation": False,
             "backspace_count": 0,
-            "mouse_movement_score": 12,
-            "amount": 48000,
+            "mouse_movement_score": 8,
+            "amount": round(avg_amount * 20, -2) or 50000,   # 20× user's average
             "payee_upi": "scammer99@fraud",
             "is_new_payee": True,
             "hour_of_day": 2,
@@ -372,17 +383,17 @@ def simulate(req: SimulateRequest, db: Session = Depends(get_db)):
         }
     else:
         return {
-            "typing_speed_ms": 175,
+            "typing_speed_ms": round(avg_typing * 1.05, 1),  # ~5% off baseline (natural jitter)
             "otp_time_sec": 4.2,
             "session_duration_sec": 34,
             "copy_paste_detected": False,
             "field_hesitation": False,
             "backspace_count": 3,
-            "mouse_movement_score": 78,
-            "amount": 2400,
-            "payee_upi": "friend@upi",
+            "mouse_movement_score": 72,
+            "amount": round(avg_amount * 0.85, -1) or 2000,  # slightly below average
+            "payee_upi": safe_payee,
             "is_new_payee": False,
-            "hour_of_day": 19,
+            "hour_of_day": mid_hour,
             "day_of_week": 1,
             "is_vpn": False,
             "is_new_device": False,

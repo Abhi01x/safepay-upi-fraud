@@ -117,6 +117,7 @@ export default function SendMoney() {
       day_of_week: simulatedData?.day_of_week ?? now.getDay(),
       amount_vs_avg: amount / userAvg,
       note: form.note,
+      ...(simulatedData?.otp_time_sec !== undefined && { otp_time_sec: simulatedData.otp_time_sec }),
     };
     navigate('/otp', { state: { transactionData, form } });
   };
